@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Register - SecureShare{% endblock %}
+{% block unauthenticated_content %}
+<div class="card auth-card p-4">
+  <div class="text-center mb-4">
+    <i class="bi bi-person-plus brand fs-1"></i>
+    <h2 class="brand mt-2">Create Account</h2>
+  </div>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="mb-3">
+      <label class="form-label" for="username">Username</label>
+      <input class="form-control" id="username" name="username" minlength="3" maxlength="50" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="email">Email</label>
+      <input class="form-control" type="email" id="email" name="email" maxlength="120" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="password">Password</label>
+      <input class="form-control" type="password" id="password" name="password" minlength="8" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="confirm_password">Confirm Password</label>
+      <input class="form-control" type="password" id="confirm_password" name="confirm_password" minlength="8" required>
+    </div>
+    <button class="btn btn-primary w-100" type="submit">Register</button>
+  </form>
+  <p class="text-center mt-3 mb-0"><a href="{{ url_for('index') }}">Back to login</a></p>
+</div>
+{% endblock %}

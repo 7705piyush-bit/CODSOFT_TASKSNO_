@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - SecureShare{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="mb-1">Welcome, {{ current_user.username }}</h2>
+    <p class="text-secondary mb-0">Normal user dashboard</p>
+  </div>
+  <span class="badge text-bg-success"><i class="bi bi-shield-check me-1"></i>Encrypted</span>
+</div>
+
+<div class="card mb-4 p-3" id="upload">
+  <h5><i class="bi bi-cloud-arrow-up me-2"></i>Upload a secure file</h5>
+  <p class="text-secondary small mb-3">PDF, DOCX, TXT, JPG, PNG or ZIP. Maximum 25 MB.</p>
+  <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-8">
+        <input class="form-control" type="file" name="file" accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.zip" required>
+      </div>
+      <div class="col-md-4 d-grid">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-lock me-2"></i>Encrypt & Upload</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="card mb-4" id="files">
+  <div class="card-header border-secondary"><h5 class="mb-0">My Files</h5></div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th>File</th><th>Size</th><th>Uploaded</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+        {% for file in files %}
+        <tr>
+          <td><i class="bi bi-file-earmark-lock me-2 text-info"></i>{{ file.original_filename }}</td>
+          <td>{{ format_size(file.file_size) }}</td>
+          <td>{{ file.uploaded_at[:16].replace('T', ' ') }} UTC</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-info" href="{{ url_for('download_file', file_id=file.id) }}"><i class="bi bi-download"></i></a>
+            <form class="d-inline" method="post" action="{{ url_for('create_share_link', file_id=file.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <select class="form-select form-select-sm d-inline w-auto ms-1" name="duration" aria-label="Link expiration">
+                <option value="5">5 min</option>
+                <option value="60" selected>1 hour</option>
+                <option value="1440">24 hours</option>
+              </select>
+              <button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-link-45deg"></i></button>
+            </form>
+            <form class="d-inline" method="post" action="{{ url_for('delete_file', file_id=file.id) }}" onsubmit="return confirm('Delete this file permanently?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-secondary py-4">No files uploaded yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card" id="links">
+  <div class="card-header border-secondary"><h5 class="mb-0">Active Shared Links</h5></div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th>File</th><th>Expires</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+        <tbody>
+        {% for link in share_links %}
+        {% set expired = (link.expires_at | string)[:-1] %}
+        <tr>
+          <td>{{ link.original_filename }}</td>
+          <td>{{ link.expires_at[:16].replace('T', ' ') }} UTC</td>
+          <td>
+            {% if link.expires_at and link.expires_at <= now.isoformat() %}
+              <span class="status-expired"><i class="bi bi-x-circle me-1"></i>Expired</span>
+            {% else %}
+              <span class="status-active"><i class="bi bi-check-circle me-1"></i>Active</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <form method="post" action="{{ url_for('revoke_share_link', link_id=link.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-outline-warning" type="submit">Revoke</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-secondary py-4">No active sharing links.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
